@@ -41,11 +41,14 @@ def main():
                 # Get the current pose of the robot's end-effector
                 current_pose = robot.getl()
 
+                # Convert the PoseVector object to a list
+                current_pose_list = list(current_pose.pos)
+
                 # Calculate the new pose
-                new_pose = current_pose + cartesian_increment
+                new_pose_list = [current_pose_list[i] + cartesian_increment[i] for i in range(6)]
 
                 # Move the robot to the new pose
-                robot.movel(new_pose, acc=0.1, vel=0.1)
+                robot.movel(new_pose_list, acc=0.1, vel=0.1)
 
     robot.close()
     print("Program terminated.")
