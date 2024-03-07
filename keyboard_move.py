@@ -5,63 +5,50 @@ import numpy as np
 # UR5 robot IP address
 ROBOT_IP = "192.168.1.10"  # Replace with your robot's IP address
 
-# Define joint angle increments (adjust as needed)
-JOINT_INCREMENT = np.radians(1)  # in radians
+# Define Cartesian increment (adjust as needed)
+CARTESIAN_INCREMENT = [0.0, 0.0, 0.01, 0.0, 0.0, 0.0]  # [dx, dy, dz, drx, dry, drz]
 
 # Define keyboard control mappings
 KEY_MAPPING = {
-    "q": (0, 1, 2, 3, 4, 5),    # Rotate joint 1 counterclockwise
-    "a": (0, -1, -2, -3, -4, -5),   # Rotate joint 1 clockwise
-    "w": (1,),   # Rotate joint 2 counterclockwise
-    "s": (-1,),  # Rotate joint 2 clockwise
-    "e": (2,),   # Rotate joint 3 counterclockwise
-    "d": (-2,),  # Rotate joint 3 clockwise
-    "r": (3,),   # Rotate joint 4 counterclockwise
-    "f": (-3,),  # Rotate joint 4 clockwise
-    "t": (4,),   # Rotate joint 5 counterclockwise
-    "g": (-4,),  # Rotate joint 5 clockwise
-    "y": (5,),   # Rotate joint 6 counterclockwise
-    "h": (-5,),  # Rotate joint 6 clockwise
-    "esc": None   # Exit program
+    "w": (0, 0, 1, 0, 0, 0),    # Move forward in Z-axis
+    "s": (0, 0, -1, 0, 0, 0),   # Move backward in Z-axis
+    "a": (0, -1, 0, 0, 0, 0),   # Move left in Y-axis
+    "d": (0, 1, 0, 0, 0, 0),    # Move right in Y-axis
+    "q": (0, 0, 0, 0, 0, -1),   # Rotate counterclockwise in Z-axis
+    "e": (0, 0, 0, 0, 0, 1),    # Rotate clockwise in Z-axis
+    "esc": None                # Exit program
 }
 
 def main():
-    try:
-        # Connect to the UR5 robot
-        robot = Robot(ROBOT_IP)
+    robot = Robot(ROBOT_IP)
 
-        print("Joint Rotation Control Script - Press 'esc' to exit.")
+    print("Cartesian Movement Control Script - Press 'esc' to exit.")
 
-        # Continuous loop to capture keyboard inputs
-        while True:
-            key_event = keyboard.read_event(suppress=True)
+    # Continuous loop to capture keyboard inputs
+    while True:
+        key_event = keyboard.read_event(suppress=True)
 
-            if key_event.event_type == keyboard.KEY_DOWN:
-                key = key_event.name.lower()
+        if key_event.event_type == keyboard.KEY_DOWN:
+            key = key_event.name.lower()
 
-                if key in KEY_MAPPING:
-                    if key == "esc":
-                        break
+            if key in KEY_MAPPING:
+                if key == "esc":
+                    break
 
-                    # Get the joint indices to be rotated and their respective directions
-                    joint_indices = KEY_MAPPING[key]
+                # Get the Cartesian increment corresponding to the key
+                cartesian_increment = np.array(KEY_MAPPING[key]) * CARTESIAN_INCREMENT
 
-                    # Calculate the new joint angles
-                    current_joint_angles = robot.getj()
-                    new_joint_angles = list(current_joint_angles)
-                    for idx in joint_indices:
-                        new_joint_angles[idx] += JOINT_INCREMENT
+                # Get the current pose of the robot's end-effector
+                current_pose = robot.getl()
 
-                    # Move the robot to the new joint angles
-                    robot.movej(new_joint_angles)
+                # Calculate the new pose
+                new_pose = current_pose + cartesian_increment
 
-        print("Program terminated.")
-    except Exception as e:
-        print("An error occurred:", e)
-    finally:
-        # Close the connection to the UR5 robot
-        if robot:
-            robot.close()
+                # Move the robot to the new pose
+                robot.movel(new_pose, acc=0.1, vel=0.1)
+
+    robot.close()
+    print("Program terminated.")
 
 if __name__ == "__main__":
     main()
